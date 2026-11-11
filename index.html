@@ -3,78 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ضغط الفيديو | إبراهيم فارس</title>
+  <title>ضاغط الفيديو | إبراهيم فارس</title>
   <style>
     * { box-sizing: border-box; }
-
     body {
       margin: 0;
       font-family: Arial, Tahoma, sans-serif;
+      background: #f5f7fb;
       color: #172033;
-      background: #f4f7fb;
     }
-
     header {
-      padding: 18px 6%;
+      background: white;
+      border-bottom: 1px solid #e5e9f0;
+      padding: 17px 6%;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #fff;
-      border-bottom: 1px solid #e7ebf1;
     }
-
     .brand { color: #1769e0; font-size: 20px; font-weight: bold; }
     header span { color: #687386; font-size: 14px; }
-
-    main {
-      width: min(680px, 92%);
-      margin: 40px auto;
-      text-align: center;
-    }
-
-    h1 { font-size: 34px; margin-bottom: 10px; }
-
-    .intro {
-      color: #687386;
-      line-height: 1.8;
-      margin-bottom: 25px;
-    }
-
-    .box {
+    main { width: min(720px, 92%); margin: 42px auto; text-align: center; }
+    h1 { margin-bottom: 10px; font-size: clamp(28px, 6vw, 40px); }
+    .intro { color: #687386; line-height: 1.8; margin-bottom: 25px; }
+    .card {
       padding: 24px;
       background: white;
       border: 1px solid #e5eaf1;
       border-radius: 16px;
-      box-shadow: 0 12px 35px #1d35570d;
+      box-shadow: 0 10px 30px #1d35570d;
+      text-align: right;
     }
-
-    .picker {
+    .upload {
       display: block;
-      padding: 28px 16px;
-      border: 2px dashed #b7c8df;
-      border-radius: 14px;
-      background: #f9fbfe;
+      padding: 28px 15px;
+      border: 2px dashed #b9c9df;
+      border-radius: 13px;
+      text-align: center;
+      background: #fafcff;
+      cursor: pointer;
     }
-
     input[type="file"] { display: none; }
-
-    button, .download, .choose {
+    .pick, button, .download {
       display: inline-block;
       padding: 12px 18px;
       border: 0;
       border-radius: 9px;
-      color: white;
       background: #1769e0;
-      font-size: 15px;
+      color: white;
       font-weight: bold;
-      cursor: pointer;
+      font-size: 15px;
       text-decoration: none;
+      cursor: pointer;
     }
-
     button:disabled { opacity: .55; cursor: not-allowed; }
-
-    .settings { margin-top: 22px; text-align: right; }
-
+    .options { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 20px; }
+    label.option { display: block; font-weight: bold; }
     select {
       width: 100%;
       margin-top: 8px;
@@ -84,217 +67,197 @@
       background: white;
       font-size: 15px;
     }
-
-    video {
-      display: none;
-      width: 100%;
-      max-height: 320px;
-      margin-top: 18px;
-      background: #111;
-      border-radius: 10px;
+    video { display: none; width: 100%; max-height: 330px; margin-top: 18px; background: #111; border-radius: 10px; }
+    #fileInfo, #status { color: #657186; line-height: 1.7; }
+    .progress-wrap { display: none; margin: 16px 0; }
+    progress { width: 100%; height: 16px; accent-color: #1769e0; }
+    #percent { text-align: center; color: #1769e0; font-weight: bold; }
+    .actions { text-align: center; margin-top: 18px; }
+    .download { display: none; margin-top: 12px; }
+    .note { font-size: 13px; color: #778296; line-height: 1.7; }
+    footer { padding: 22px; text-align: center; color: #8791a1; font-size: 13px; }
+    @media (max-width: 520px) {
+      .options { grid-template-columns: 1fr; }
+      .card { padding: 17px; }
     }
-
-    #status { min-height: 28px; color: #687386; line-height: 1.7; }
-
-    .download { display: none; margin-top: 10px; }
-
-    footer { padding: 20px; color: #8791a1; text-align: center; }
-
-    .hint { color: #687386; font-size: 13px; line-height: 1.7; }
   </style>
 </head>
 <body>
   <header>
     <div class="brand">إبراهيم فارس</div>
-    <span>أداة ضغط الفيديو</span>
+    <span>ضاغط الفيديو</span>
   </header>
 
   <main>
-    <h1>اضغط فيديوهاتك بسهولة</h1>
-    <p class="intro">اختَر فيديو، وحدد الدقة، ثم ابدأ الضغط ونزّل النتيجة.</p>
+    <h1>ضغط الفيديو أونلاين</h1>
+    <p class="intro">اختر فيديو، حدد الدقة والجودة، ثم اضغطه ونزّله.</p>
 
-    <section class="box">
-      <label class="picker" for="videoInput">
+    <section class="card">
+      <label class="upload" for="videoInput">
         <strong>اختَر فيديو من جهازك</strong>
-        <p>يفضل استخدام Chrome على Android</p>
-        <span class="choose">اختيار فيديو</span>
+        <p>اضغط هنا لاختيار ملف فيديو</p>
+        <span class="pick">اختيار فيديو</span>
       </label>
-
       <input id="videoInput" type="file" accept="video/*">
 
-      <div class="settings">
-        <label for="resolution">دقة الفيديو بعد الضغط</label>
-        <select id="resolution">
-          <option value="1080">1080p — جودة أعلى</option>
-          <option value="720" selected>720p — متوسطة</option>
-          <option value="480">480p — حجم أقل</option>
-          <option value="360">360p — أصغر حجم</option>
-        </select>
+      <p id="fileInfo">لم يتم اختيار فيديو بعد.</p>
+
+      <div class="options">
+        <label class="option" for="resolution">
+          الدقة
+          <select id="resolution">
+            <option value="1080">1080p</option>
+            <option value="720" selected>720p</option>
+            <option value="480">480p</option>
+            <option value="360">360p</option>
+          </select>
+        </label>
+
+        <label class="option" for="quality">
+          مستوى الضغط
+          <select id="quality">
+            <option value="23">جودة عالية</option>
+            <option value="28" selected>متوازن</option>
+            <option value="33">حجم أصغر</option>
+          </select>
+        </label>
       </div>
 
       <video id="preview" controls playsinline></video>
-      <p id="status" aria-live="polite">لم يتم اختيار فيديو بعد.</p>
 
-      <button id="compressButton" disabled>ضغط الفيديو</button>
-      <br>
-      <a id="downloadLink" class="download" download="ibrahim-fares-compressed.webm">
-        تنزيل الفيديو المضغوط
-      </a>
+      <div class="progress-wrap" id="progressWrap">
+        <progress id="progress" max="100" value="0"></progress>
+        <div id="percent">0%</div>
+      </div>
 
-      <p class="hint">
-        اترك الصفحة مفتوحة أثناء الضغط. قد لا يدعم بعض المتصفحات تسجيل الفيديو.
+      <p id="status" aria-live="polite"></p>
+
+      <div class="actions">
+        <button id="compressButton" disabled>ضغط الفيديو</button>
+        <br>
+        <a id="downloadLink" class="download" download="ibrahim-fares-compressed.mp4">
+          تنزيل الفيديو المضغوط
+        </a>
+      </div>
+
+      <p class="note">
+        قد يستغرق الضغط وقتًا، ويعتمد على حجم الفيديو وسرعة الجهاز.
+        لا تغلق الصفحة أثناء المعالجة.
       </p>
     </section>
   </main>
 
   <footer>© <span id="year"></span> إبراهيم فارس</footer>
 
-  <script>
+  <script type="module">
+    import { FFmpeg } from "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js";
+    import { fetchFile, toBlobURL } from "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js";
+
     const input = document.getElementById("videoInput");
     const preview = document.getElementById("preview");
-    const statusText = document.getElementById("status");
+    const fileInfo = document.getElementById("fileInfo");
+    const status = document.getElementById("status");
     const button = document.getElementById("compressButton");
-    const resolutionSelect = document.getElementById("resolution");
     const downloadLink = document.getElementById("downloadLink");
-
-    let videoUrl = null;
-    let outputUrl = null;
-    let selectedFile = null;
+    const progressWrap = document.getElementById("progressWrap");
+    const progress = document.getElementById("progress");
+    const percent = document.getElementById("percent");
 
     document.getElementById("year").textContent = new Date().getFullYear();
 
-    input.addEventListener("change", () => {
-      selectedFile = input.files[0];
-      downloadLink.style.display = "none";
+    let selectedFile = null;
+    let previewUrl = null;
+    let resultUrl = null;
+    let ffmpeg = null;
+    let isLoaded = false;
 
+    input.addEventListener("change", () => {
+      selectedFile = input.files?.[0];
       if (!selectedFile) return;
 
-      if (videoUrl) URL.revokeObjectURL(videoUrl);
-      videoUrl = URL.createObjectURL(selectedFile);
-
-      preview.src = videoUrl;
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = URL.createObjectURL(selectedFile);
+      preview.src = previewUrl;
       preview.style.display = "block";
       button.disabled = false;
-      statusText.textContent =
-        `الفيديو: ${selectedFile.name} — الحجم: ${formatBytes(selectedFile.size)}`;
+      downloadLink.style.display = "none";
+      fileInfo.textContent = `${selectedFile.name} — ${formatBytes(selectedFile.size)}`;
+      status.textContent = "";
     });
 
     button.addEventListener("click", async () => {
       if (!selectedFile) return;
 
-      if (!window.MediaRecorder || !preview.captureStream) {
-        statusText.textContent =
-          "متصفحك لا يدعم ضغط الفيديو بهذه الطريقة. جرّب Chrome أو Firefox على جهاز آخر.";
-        return;
-      }
-
       button.disabled = true;
       downloadLink.style.display = "none";
-      statusText.textContent = "جارٍ تجهيز الفيديو...";
+      progressWrap.style.display = "block";
+      progress.value = 0;
+      percent.textContent = "0%";
 
       try {
-        await waitForVideo();
+        if (!isLoaded) {
+          status.textContent = "جارٍ تحميل محرك الضغط لأول مرة...";
+          ffmpeg = new FFmpeg();
 
-        const maxHeight = Number(resolutionSelect.value);
-        const scale = Math.min(1, maxHeight / preview.videoHeight);
-        const width = Math.max(2, Math.round(preview.videoWidth * scale / 2) * 2);
-        const height = Math.max(2, Math.round(preview.videoHeight * scale / 2) * 2);
+          ffmpeg.on("progress", ({ progress: value }) => {
+            const p = Math.max(0, Math.min(100, Math.round(value * 100)));
+            progress.value = p;
+            percent.textContent = p + "%";
+          });
 
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const context = canvas.getContext("2d");
+          const base = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd";
+          await ffmpeg.load({
+            coreURL: await toBlobURL(`${base}/ffmpeg-core.js`, "text/javascript"),
+            wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, "application/wasm")
+          });
 
-        const canvasStream = canvas.captureStream(24);
-        const sourceStream = preview.captureStream
-          ? preview.captureStream()
-          : preview.mozCaptureStream();
-
-        sourceStream.getAudioTracks().forEach(track => {
-          canvasStream.addTrack(track);
-        });
-
-        const mimeType = chooseMimeType();
-        if (!mimeType) {
-          throw new Error("هذا المتصفح لا يدعم صيغة WebM للتسجيل.");
+          isLoaded = true;
         }
 
-        const recorder = new MediaRecorder(canvasStream, {
-          mimeType,
-          videoBitsPerSecond: maxHeight >= 720 ? 1800000 : 800000
-        });
+        status.textContent = "جارٍ ضغط الفيديو...";
 
-        const chunks = [];
+        const inputName = "input-video";
+        const outputName = "compressed-video.mp4";
+        const maxHeight = document.getElementById("resolution").value;
+        const crf = document.getElementById("quality").value;
 
-        recorder.ondataavailable = event => {
-          if (event.data && event.data.size > 0) chunks.push(event.data);
-        };
+        await ffmpeg.writeFile(inputName, await fetchFile(selectedFile));
 
-        const finished = new Promise((resolve, reject) => {
-          recorder.onstop = resolve;
-          recorder.onerror = () => reject(new Error("حدث خطأ أثناء ضغط الفيديو."));
-        });
+        await ffmpeg.exec([
+          "-i", inputName,
+          "-vf", `scale=-2:${maxHeight}`,
+          "-c:v", "libx264",
+          "-preset", "veryfast",
+          "-crf", crf,
+          "-c:a", "aac",
+          "-b:a", "128k",
+          "-movflags", "+faststart",
+          outputName
+        ]);
 
-        preview.currentTime = 0;
-        recorder.start(1000);
-        await preview.play();
+        const data = await ffmpeg.readFile(outputName);
+        const blob = new Blob([data], { type: "video/mp4" });
 
-        statusText.textContent = "جارٍ ضغط الفيديو... اترك الصفحة مفتوحة.";
+        if (resultUrl) URL.revokeObjectURL(resultUrl);
+        resultUrl = URL.createObjectURL(blob);
 
-        function drawFrame() {
-          if (recorder.state !== "recording") return;
-
-          context.drawImage(preview, 0, 0, width, height);
-
-          if (!preview.paused && !preview.ended) {
-            requestAnimationFrame(drawFrame);
-          }
-        }
-
-        drawFrame();
-
-        await new Promise(resolve => {
-          preview.onended = resolve;
-        });
-
-        recorder.stop();
-        await finished;
-
-        const blob = new Blob(chunks, { type: mimeType });
-
-        if (outputUrl) URL.revokeObjectURL(outputUrl);
-        outputUrl = URL.createObjectURL(blob);
-
-        downloadLink.href = outputUrl;
-        downloadLink.download = "ibrahim-fares-compressed.webm";
+        downloadLink.href = resultUrl;
+        downloadLink.download = "ibrahim-fares-compressed.mp4";
         downloadLink.style.display = "inline-block";
 
-        statusText.textContent =
-          `اكتمل الضغط. الحجم الجديد: ${formatBytes(blob.size)} ` +
-          `(الحجم الأصلي: ${formatBytes(selectedFile.size)})`;
+        const saved = Math.max(0, Math.round((1 - blob.size / selectedFile.size) * 100));
+        status.textContent =
+          `اكتمل الضغط — الحجم الجديد: ${formatBytes(blob.size)} — التوفير: ${saved}%`;
+        progress.value = 100;
+        percent.textContent = "اكتمل";
       } catch (error) {
-        statusText.textContent = error.message || "تعذر ضغط الفيديو.";
+        console.error(error);
+        status.textContent =
+          "تعذر الضغط. جرّب فيديو أصغر أو افتح الموقع بمتصفح Chrome واترك الصفحة مفتوحة.";
       } finally {
         button.disabled = false;
       }
     });
-
-    function chooseMimeType() {
-      const types = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"];
-      return types.find(type => MediaRecorder.isTypeSupported(type)) || "";
-    }
-
-    function waitForVideo() {
-      return new Promise((resolve, reject) => {
-        if (preview.readyState >= 2 && preview.videoWidth) {
-          resolve();
-          return;
-        }
-
-        preview.onloadedmetadata = resolve;
-        preview.onerror = () => reject(new Error("تعذر فتح الفيديو."));
-      });
-    }
 
     function formatBytes(bytes) {
       if (bytes < 1024) return bytes + " بايت";
