@@ -1,30 +1,480 @@
-});
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ضاغط الفيديو</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --border: #262b36;
+    --text: #e6e9ef;
+    --muted: #8a93a6;
+    --accent: #3b82f6;
+    --ok: #22c55e;
+    --err: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 28px; }
+  header h1 { font-size: 1.8rem; margin-bottom: 6px; }
+  header p { color: var(--muted); }
 
-/* ---------- ui helpers ---------- */
-function setStatus(m) { $("#status").dataset.msg = m; refreshStatus(); }
-function refreshStatus() {
-  const s = $("#status");
-  s.textContent = (s.dataset.msg || "") + (s.dataset.t ? "  ·  " + s.dataset.t : "");
-}
-function setProgress(p) {
-  const bar = $("#bar");
-  if (p === null || isNaN(p)) { bar.classList.add("ind"); $("#fill").style.width = ""; return; }
-  bar.classList.remove("ind");
-  p = Math.max(0, Math.min(1, p));
-  $("#fill").style.width = (p * 100) + "%";
-  $("#status").dataset.msg = `جارٍ المعالجة… ${Math.round(p * 100)}%`;
-  refreshStatus();
-}
-function showError(e) {
-  const big = file && file.size > 500 * 1048576;
-  $("#err").textContent = "تعذرت المعالجة." + (big ? " الملف كبير، جرّب فيديو أصغر أو جهازًا بذاكرة أكبر." : "") + "\n" + (e.message || e);
-  $("#err").hidden = false;
-}
-function resetResult() {
-  $("#err").hidden = true; $("#result").hidden = true;
-  if (outURL) { URL.revokeObjectURL(outURL); outURL = null; }
-  $("#out").removeAttribute("src");
-}
+  /* Steps */
+  .steps { display: flex; justify-content: space-between; margin-bottom: 28px; gap: 8px; }
+  .step {
+    flex: 1; text-align: center; padding: 12px 6px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; color: var(--muted); font-size: 0.9rem;
+    transition: .3s;
+  }
+  .step .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--border); margin-bottom: 6px; font-weight: bold;
+  }
+  .step.active { color: var(--text); border-color: var(--accent); }
+  .step.active .num { background: var(--accent); color: #fff; }
+  .step.done .num { background: var(--ok); color: #fff; }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 16px; padding: 22px; margin-bottom: 20px;
+  }
+  .card h2 { font-size: 1.1rem; margin-bottom: 14px; }
+
+  /* Upload */
+  .dropzone {
+    border: 2px dashed var(--border); border-radius: 14px;
+    padding: 40px 20px; text-align: center; cursor: pointer;
+    transition: .2s; background: var(--bg);
+  }
+  .dropzone:hover, .dropzone.drag { border-color: var(--accent); background: #131a2a; }
+  .dropzone .icon { font-size: 2.4rem; margin-bottom: 8px; }
+  .dropzone small { color: var(--muted); display: block; margin-top: 6px; }
+  .file-info { display: none; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .file-info .meta { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; flex: 1; min-width: 220px; }
+  .meta div { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+  .meta span { display: block; color: var(--muted); font-size: 0.8rem; }
+  .meta strong { font-size: 0.95rem; direction: ltr; display: inline-block; }
+
+  /* Buttons */
+  .btn {
+    background: var(--accent); color: #fff; border: none;
+    padding: 11px 20px; border-radius: 10px; cursor: pointer;
+    font-size: 0.95rem; font-family: inherit; transition: .2s;
+    text-decoration: none; display: inline-block;
+  }
+  .btn:hover { filter: brightness(1.1); }
+  .btn:disabled { background: #374151; cursor: not-allowed; filter: none; }
+  .btn.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn.success { background: var(--ok); }
+
+  /* Options */
+  .options { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .option {
+    position: relative; cursor: pointer;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px; transition: .2s;
+  }
+  .option:hover { border-color: #3a4357; }
+  .option input { position: absolute; opacity: 0; pointer-events: none; }
+  .option.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .option .title { font-weight: bold; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .option .title::after {
+    content: ""; width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid var(--muted); flex-shrink: 0;
+  }
+  .option.selected .title::after { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 45%, transparent 50%); }
+  .option p { color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
+  .option .badge { display: inline-block; margin-top: 8px; font-size: 0.8rem; color: var(--ok); }
+  .option.recommended { border-color: #1e3a6e; }
+  .option .rec { color: var(--accent); font-size: 0.75rem; }
+
+  .analysis { background: #0c1424; border: 1px solid #1e3a6e; border-radius: 12px; padding: 14px; margin-bottom: 16px; font-size: 0.9rem; line-height: 1.7; color: #bcd4ff; }
+
+  /* Progress */
+  .progress-wrap { display: none; }
+  .bar { height: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), #60a5fa); transition: width .3s; }
+  .progress-info { display: flex; justify-content: space-between; margin-top: 10px; color: var(--muted); font-size: 0.9rem; gap: 10px; flex-wrap: wrap; }
+  .status { margin-top: 10px; color: var(--text); font-size: 0.9rem; }
+
+  /* Result */
+  .result { display: none; }
+  .compare { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+  .compare div { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; text-align: center; }
+  .compare span { display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 6px; }
+  .compare strong { font-size: 1.2rem; direction: ltr; display: inline-block; }
+  .compare .good strong { color: var(--ok); }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+  .error { display: none; background: #2a1215; border: 1px solid var(--err); color: #fca5a5; border-radius: 12px; padding: 12px 14px; margin-bottom: 18px; font-size: 0.9rem; }
+  .hidden { display: none !important; }
+  footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 30px; }
+
+  @media (max-width: 600px) {
+    .compare { grid-template-columns: 1fr; }
+    .steps .step { font-size: 0.75rem; }
+    header h1 { font-size: 1.4rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>ضاغط الفيديو</h1>
+    <p>ضغط الفيديو يتم بالكامل داخل متصفحك، ولا يتم رفع أي ملف إلى أي خادم</p>
+  </header>
+
+  <div class="steps">
+    <div class="step active" id="step1"><div class="num">1</div>رفع الفيديو</div>
+    <div class="step" id="step2"><div class="num">2</div>اختيار الطريقة</div>
+    <div class="step" id="step3"><div class="num">3</div>التحميل</div>
+  </div>
+
+  <div class="error" id="errorBox"></div>
+
+  <!-- Step 1: Upload -->
+  <section class="card" id="uploadCard">
+    <h2>1. ارفع الفيديو</h2>
+    <div class="dropzone" id="dropzone">
+      <div class="icon">🎬</div>
+      <div>اسحب الفيديو هنا أو اضغط للاختيار</div>
+      <small>الحد الأقصى للحجم: 500 ميغابايت</small>
+    </div>
+    <input type="file" id="fileInput" accept="video/*" class="hidden">
+    <div class="file-info" id="fileInfo">
+      <div class="meta">
+        <div><span>اسم الملف</span><strong id="fileName">-</strong></div>
+        <div><span>الحجم</span><strong id="fileSize">-</strong></div>
+        <div><span>الدقة</span><strong id="fileRes">-</strong></div>
+        <div><span>المدة</span><strong id="fileDur">-</strong></div>
+      </div>
+      <button class="btn secondary" id="changeBtn">تغيير الفيديو</button>
+    </div>
+  </section>
+
+  <!-- Step 2: Method -->
+  <section class="card hidden" id="methodCard">
+    <h2>2. اختر طريقة الضغط</h2>
+    <div class="analysis" id="analysisBox">جاري تحليل الفيديو...</div>
+    <div class="options" id="options">
+      <label class="option selected" data-method="quality">
+        <input type="radio" name="method" value="quality" checked>
+        <div class="title">جودة عالية</div>
+        <p>يحافظ على جودة الصورة مع تقليل الحجم بشكل معقول (CRF 23)</p>
+      </label>
+      <label class="option" data-method="fps">
+        <input type="radio" name="method" value="fps">
+        <div class="title">تقليل الإطارات (30 FPS)</div>
+        <p>تحويل الفيديو إلى 30 إطارا في الثانية لتقليل الحجم</p>
+      </label>
+      <label class="option" data-method="720p60">
+        <input type="radio" name="method" value="720p60">
+        <div class="title">720p بسلاسة 60 FPS</div>
+        <p>دقة 720 بكسل مع الحفاظ على 60 إطارا في الثانية</p>
+      </label>
+      <label class="option" data-method="chat">
+        <input type="radio" name="method" value="chat">
+        <div class="title">إرسال عبر الدردشة</div>
+        <p>دقة 720 بكسل وحد أقصى 20 ميغابايت، مناسب للواتساب وتيليجرام</p>
+      </label>
+      <label class="option" data-method="tiktok">
+        <input type="radio" name="method" value="tiktok">
+        <div class="title">تيك توك / ريلز</div>
+        <p>دقة 1080 بكسل مع جودة مناسبة للمنصات القصيرة</p>
+      </label>
+    </div>
+    <div style="margin-top:18px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+      <button class="btn" id="startBtn">ابدأ الضغط</button>
+    </div>
+  </section>
+
+  <!-- Progress -->
+  <section class="card progress-wrap" id="progressCard">
+    <h2>جاري الضغط...</h2>
+    <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+    <div class="progress-info">
+      <span id="percent">0%</span>
+      <span id="eta">الوقت المتبقي: --</span>
+    </div>
+    <div class="status" id="statusText">تحميل المحرك...</div>
+  </section>
+
+  <!-- Step 3: Download -->
+  <section class="card result" id="resultCard">
+    <h2>3. التحميل</h2>
+    <div class="compare">
+      <div><span>الحجم الأصلي</span><strong id="origSize">-</strong></div>
+      <div><span>الحجم الجديد</span><strong id="newSize">-</strong></div>
+      <div class="good"><span>التوفير</span><strong id="saved">-</strong></div>
+    </div>
+    <div class="actions">
+      <a class="btn success" id="downloadBtn" download="compressed.mp4">تحميل MP4</a>
+      <button class="btn secondary" id="restartBtn">ضغط فيديو آخر</button>
+    </div>
+  </section>
+
+  <footer>جميع العمليات تتم محليا داخل المتصفح</footer>
+</div>
+
+<script src="vendor/ffmpeg.js"></script>
+<script src="vendor/index.js"></script>
+<script>
+(() => {
+  const MAX_SIZE = 500 * 1024 * 1024;
+  const BASE = "vendor/";
+  const CORE_JS = BASE + "ffmpeg-core.js";
+  const CORE_WASM = BASE + "ffmpeg-core.wasm";
+
+  const PRESETS = {
+    quality: ['-c:v','libx264','-crf','23','-preset','veryfast','-c:a','aac','-b:a','128k'],
+    fps:     ['-r','30','-c:v','libx264','-crf','23','-preset','veryfast','-c:a','aac','-b:a','128k'],
+    '720p60':['-vf','scale=-2:720','-r','60','-c:v','libx264','-crf','23','-preset','veryfast','-c:a','aac','-b:a','128k'],
+    chat:    ['-vf','scale=-2:720','-c:v','libx264','-crf','30','-preset','veryfast','-c:a','aac','-b:a','96k','-fs','20M'],
+    tiktok:  ['-vf','scale=-2:1080','-c:v','libx264','-crf','22','-preset','veryfast','-c:a','aac','-b:a','128k']
+  };
+
+  const $ = id => document.getElementById(id);
+  const els = {
+    dropzone: $('dropzone'), fileInput: $('fileInput'), fileInfo: $('fileInfo'),
+    fileName: $('fileName'), fileSize: $('fileSize'), fileRes: $('fileRes'), fileDur: $('fileDur'),
+    changeBtn: $('changeBtn'), uploadCard: $('uploadCard'), methodCard: $('methodCard'),
+    analysisBox: $('analysisBox'), startBtn: $('startBtn'), progressCard: $('progressCard'),
+    barFill: $('barFill'), percent: $('percent'), eta: $('eta'), statusText: $('statusText'),
+    resultCard: $('resultCard'), origSize: $('origSize'), newSize: $('newSize'), saved: $('saved'),
+    downloadBtn: $('downloadBtn'), restartBtn: $('restartBtn'), errorBox: $('errorBox'),
+    options: $('options')
+  };
+
+  let ffmpeg = null, loaded = false, currentFile = null, meta = null, outputUrl = null;
+
+  function setStep(n) {
+    [1,2,3].forEach(i => {
+      const s = $('step' + i);
+      s.classList.remove('active','done');
+      if (i < n) s.classList.add('done');
+      if (i === n) s.classList.add('active');
+    });
+  }
+
+  function showError(msg) {
+    els.errorBox.textContent = msg;
+    els.errorBox.style.display = 'block';
+  }
+  function clearError() { els.errorBox.style.display = 'none'; }
+
+  function fmtSize(bytes) {
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    if (bytes < 1024 * 1024 * 1024) return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+    return (bytes / 1024 / 1024 / 1024).toFixed(2) + ' GB';
+  }
+  function fmtTime(sec) {
+    if (!isFinite(sec) || sec < 0) return '--';
+    sec = Math.round(sec);
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return m > 0 ? `${m} د ${s} ث` : `${s} ث`;
+  }
+
+  function readMeta(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const v = document.createElement('video');
+      v.preload = 'metadata';
+      v.onloadedmetadata = () => {
+        const data = { width: v.videoWidth, height: v.videoHeight, duration: v.duration };
+        URL.revokeObjectURL(url);
+        resolve(data);
+      };
+      v.onerror = () => { URL.revokeObjectURL(url); reject(new Error('تعذر قراءة بيانات الفيديو. تأكد أن الصيغة مدعومة.')); };
+      v.src = url;
+    });
+  }
+
+  function analyze() {
+    const bitrate = (currentFile.size * 8) / meta.duration; // bits per second
+    const kbps = Math.round(bitrate / 1000);
+    const h = meta.height;
+    const d = meta.duration;
+    const est = {
+      quality: bitrate > 3000000 ? 45 : 25,
+      fps: meta.fps && meta.fps > 30 ? 30 : 15,
+      '720p60': h > 720 ? 55 : 10,
+      chat: h > 720 || currentFile.size > 20 * 1024 * 1024 ? 70 : 20,
+      tiktok: h > 1080 ? 40 : 10
+    };
+    let tip = '';
+    if (bitrate > 5000000) tip = 'معدل البت مرتفع جدا، ينصح بطريقة الجودة العالية أو الدردشة لتوفير كبير.';
+    else if (h > 1080) tip = 'الدقة أعلى من 1080 بكسل، تقليل الدقة سيوفر مساحة كبيرة.';
+    else tip = 'الملف متوسط الحجم، طريقة الجودة العالية تعطي توازنا جيدا.';
+    els.analysisBox.innerHTML =
+      `الدقة: ${meta.width}×${h} | المدة: ${fmtTime(d)} | معدل البت: ${kbps} kbps<br>` +
+      `التوفير المتوقع: جودة عالية ~${est.quality}%، تقليل الإطارات ~${est.fps}%، 720p60 ~${est['720p60']}%، ` +
+      `الدردشة ~${est.chat}%، تيك توك ~${est.tiktok}%<br>${tip}`;
+    // Suggest recommended option
+    const best = Object.keys(est).reduce((a, b) => est[a] >= est[b] ? a : b);
+    document.querySelectorAll('.option').forEach(o => {
+      o.classList.toggle('recommended', o.dataset.method === best);
+    });
+  }
+
+  async function loadEngine() {
+    if (loaded) return;
+    const { FFmpeg } = FFmpegWASM;
+    const { toBlobURL } = FFmpegUtil;
+    ffmpeg = new FFmpeg();
+    ffmpeg.on('log', ({ message }) => console.log(message));
+    els.statusText.textContent = 'تحميل المحرك من الملفات المحلية...';
+    await ffmpeg.load({
+      coreURL: await toBlobURL(CORE_JS, 'text/javascript'),
+      wasmURL: await toBlobURL(CORE_WASM, 'application/wasm')
+    });
+    loaded = true;
+  }
+
+  function handleFile(file) {
+    clearError();
+    if (!file) return;
+    if (!file.type.startsWith('video/') && !/\.(mp4|mov|mkv|webm|avi|3gp)$/i.test(file.name)) {
+      showError('نوع الملف غير مدعوم. اختر فيديو.');
+      return;
+    }
+    if (file.size > MAX_SIZE) {
+      showError('حجم الملف يتجاوز الحد المسموح (500 ميغابايت).');
+      return;
+    }
+    readMeta(file).then(data => {
+      currentFile = file;
+      meta = data;
+      els.fileName.textContent = file.name;
+      els.fileSize.textContent = fmtSize(file.size);
+      els.fileRes.textContent = `${data.width}×${data.height}`;
+      els.fileDur.textContent = fmtTime(data.duration);
+      els.dropzone.classList.add('hidden');
+      els.fileInfo.style.display = 'flex';
+      els.methodCard.classList.remove('hidden');
+      setStep(2);
+      analyze();
+      els.methodCard.scrollIntoView({ behavior: 'smooth' });
+    }).catch(err => showError(err.message));
+  }
+
+  els.dropzone.addEventListener('click', () => els.fileInput.click());
+  els.changeBtn.addEventListener('click', () => els.fileInput.click());
+  els.fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+  ['dragenter','dragover'].forEach(ev => els.dropzone.addEventListener(ev, e => {
+    e.preventDefault(); els.dropzone.classList.add('drag');
+  }));
+  ['dragleave','drop'].forEach(ev => els.dropzone.addEventListener(ev, e => {
+    e.preventDefault(); els.dropzone.classList.remove('drag');
+  }));
+  els.dropzone.addEventListener('drop', e => handleFile(e.dataTransfer.files[0]));
+
+  els.options.addEventListener('change', () => {
+    document.querySelectorAll('.option').forEach(o => {
+      o.classList.toggle('selected', o.querySelector('input').checked);
+    });
+  });
+
+  async function compress() {
+    const method = document.querySelector('input[name="method"]:checked').value;
+    clearError();
+    els.startBtn.disabled = true;
+    els.progressCard.style.display = 'block';
+    els.progressCard.scrollIntoView({ behavior: 'smooth' });
+    setProgress(0, 'جاري التجهيز...', '--');
+
+    try {
+      await loadEngine();
+
+      const inName = 'input.' + (currentFile.name.split('.').pop() || 'mp4');
+      const outName = 'output.mp4';
+      els.statusText.textContent = 'تحميل الفيديو إلى الذاكرة المحلية...';
+      await ffmpeg.writeFile(inName, new Uint8Array(await currentFile.arrayBuffer()));
+
+      const startTime = Date.now();
+      let lastPct = 0;
+      const onProgress = ({ progress }) => {
+        const pct = Math.min(100, Math.max(0, Math.round(progress * 100)));
+        if (pct === lastPct) return;
+        lastPct = pct;
+        const elapsed = (Date.now() - startTime) / 1000;
+        const eta = pct > 0 ? (elapsed / pct) * (100 - pct) : NaN;
+        setProgress(pct, 'جاري الضغط...', fmtTime(eta));
+      };
+      ffmpeg.on('progress', onProgress);
+
+      els.statusText.textContent = 'جاري الضغط...';
+      const args = ['-i', inName, ...PRESETS[method], '-movflags', '+faststart', '-y', outName];
+      const code = await ffmpeg.exec(args);
+      ffmpeg.off('progress', onProgress);
+
+      if (code !== 0) throw new Error('فشلت عملية الضغط (رمز الخطأ ' + code + ')');
+
+      setProgress(100, 'اكتمل الضغط', '0 ث');
+      const data = await ffmpeg.readFile(outName);
+      const blob = new Blob([data.buffer], { type: 'video/mp4' });
+
+      if (outputUrl) URL.revokeObjectURL(outputUrl);
+      outputUrl = URL.createObjectURL(blob);
+      els.downloadBtn.href = outputUrl;
+      els.downloadBtn.download = currentFile.name.replace(/\.[^.]+$/, '') + '_compressed.mp4';
+
+      const saved = Math.max(0, (1 - blob.size / currentFile.size) * 100);
+      els.origSize.textContent = fmtSize(currentFile.size);
+      els.newSize.textContent = fmtSize(blob.size);
+      els.saved.textContent = saved.toFixed(1) + '%';
+
+      // Memory cleanup of engine files
+      await ffmpeg.deleteFile(inName).catch(() => {});
+      await ffmpeg.deleteFile(outName).catch(() => {});
+
+      els.progressCard.style.display = 'none';
+      els.resultCard.style.display = 'block';
+      setStep(3);
+      els.resultCard.scrollIntoView({ behavior: 'smooth' });
+    } catch (err) {
+      console.error(err);
+      els.progressCard.style.display = 'none';
+      showError('حدث خطأ: ' + (err && err.message ? err.message : err));
+    } finally {
+      els.startBtn.disabled = false;
+    }
+  }
+
+  function setProgress(pct, status, eta) {
+    els.barFill.style.width = pct + '%';
+    els.percent.textContent = pct + '%';
+    els.statusText.textContent = status;
+    els.eta.textContent = 'الوقت المتبقي: ' + eta;
+  }
+
+  els.startBtn.addEventListener('click', compress);
+
+  els.restartBtn.addEventListener('click', () => {
+    if (outputUrl) URL.revokeObjectURL(outputUrl);
+    outputUrl = null;
+    currentFile = null; meta = null;
+    els.fileInput.value = '';
+    els.dropzone.classList.remove('hidden');
+    els.fileInfo.style.display = 'none';
+    els.methodCard.classList.add('hidden');
+    els.resultCard.style.display = 'none';
+    els.progressCard.style.display = 'none';
+    setStep(1);
+    clearError();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+})();
 </script>
 </body>
 </html>
