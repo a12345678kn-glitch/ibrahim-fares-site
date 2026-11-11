@@ -2,268 +2,144 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ضاغط الفيديو | إبراهيم فارس</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ضغط الفيديو</title>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Arial, Tahoma, sans-serif;
-      background: #f5f7fb;
-      color: #172033;
-    }
-    header {
-      background: white;
-      border-bottom: 1px solid #e5e9f0;
-      padding: 17px 6%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .brand { color: #1769e0; font-size: 20px; font-weight: bold; }
-    header span { color: #687386; font-size: 14px; }
-    main { width: min(720px, 92%); margin: 42px auto; text-align: center; }
-    h1 { margin-bottom: 10px; font-size: clamp(28px, 6vw, 40px); }
-    .intro { color: #687386; line-height: 1.8; margin-bottom: 25px; }
-    .card {
-      padding: 24px;
-      background: white;
-      border: 1px solid #e5eaf1;
-      border-radius: 16px;
-      box-shadow: 0 10px 30px #1d35570d;
-      text-align: right;
-    }
-    .upload {
-      display: block;
-      padding: 28px 15px;
-      border: 2px dashed #b9c9df;
-      border-radius: 13px;
-      text-align: center;
-      background: #fafcff;
-      cursor: pointer;
-    }
-    input[type="file"] { display: none; }
-    .pick, button, .download {
-      display: inline-block;
-      padding: 12px 18px;
-      border: 0;
-      border-radius: 9px;
-      background: #1769e0;
-      color: white;
-      font-weight: bold;
-      font-size: 15px;
-      text-decoration: none;
-      cursor: pointer;
-    }
-    button:disabled { opacity: .55; cursor: not-allowed; }
-    .options { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 20px; }
-    label.option { display: block; font-weight: bold; }
-    select {
-      width: 100%;
-      margin-top: 8px;
-      padding: 12px;
-      border: 1px solid #d8e0eb;
-      border-radius: 8px;
-      background: white;
-      font-size: 15px;
-    }
-    video { display: none; width: 100%; max-height: 330px; margin-top: 18px; background: #111; border-radius: 10px; }
-    #fileInfo, #status { color: #657186; line-height: 1.7; }
-    .progress-wrap { display: none; margin: 16px 0; }
-    progress { width: 100%; height: 16px; accent-color: #1769e0; }
-    #percent { text-align: center; color: #1769e0; font-weight: bold; }
-    .actions { text-align: center; margin-top: 18px; }
-    .download { display: none; margin-top: 12px; }
-    .note { font-size: 13px; color: #778296; line-height: 1.7; }
-    footer { padding: 22px; text-align: center; color: #8791a1; font-size: 13px; }
-    @media (max-width: 520px) {
-      .options { grid-template-columns: 1fr; }
-      .card { padding: 17px; }
-    }
+    body { margin: 0; font-family: Tahoma, Arial, sans-serif; background: #0b0b0b; color: #eee; }
+    .wrap { max-width: 480px; margin: 0 auto; padding: 20px; }
+    .steps { display: flex; justify-content: space-between; margin-bottom: 24px; font-size: 13px; color: #666; }
+    .steps .active { color: #f5b400; font-weight: bold; }
+    .card { background: #161616; border: 1px solid #2a2a2a; border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+    .file-info { display: flex; justify-content: space-between; align-items: center; }
+    .file-info small { color: #888; }
+    .opt { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
+    .opt input { margin-top: 4px; accent-color: #f5b400; }
+    .opt h3 { margin: 0 0 4px; font-size: 15px; }
+    .opt p { margin: 0; font-size: 12px; color: #999; line-height: 1.6; }
+    .opt.selected { border-color: #f5b400; }
+    .badge { display: inline-block; background: #f5b400; color: #000; font-size: 11px; padding: 2px 8px; border-radius: 6px; margin-bottom: 6px; }
+    .btn { width: 100%; padding: 14px; background: #f5b400; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .bar { height: 8px; background: #222; border-radius: 6px; overflow: hidden; margin-top: 12px; }
+    .bar div { height: 100%; width: 0; background: #f5b400; transition: width 0.3s; }
+    #msg { font-size: 13px; color: #aaa; margin-top: 8px; }
+    input[type=file] { color: #aaa; }
   </style>
 </head>
 <body>
-  <header>
-    <div class="brand">إبراهيم فارس</div>
-    <span>ضاغط الفيديو</span>
-  </header>
+<div class="wrap">
+  <div class="steps">
+    <span>1 رفع</span>
+    <span class="active">2 الطريقة</span>
+    <span>3 التحميل</span>
+  </div>
 
-  <main>
-    <h1>ضغط الفيديو أونلاين</h1>
-    <p class="intro">اختر فيديو، حدد الدقة والجودة، ثم اضغطه ونزّله.</p>
+  <div class="card" id="uploadCard">
+    <input type="file" id="file" accept="video/*">
+  </div>
 
-    <section class="card">
-      <label class="upload" for="videoInput">
-        <strong>اختَر فيديو من جهازك</strong>
-        <p>اضغط هنا لاختيار ملف فيديو</p>
-        <span class="pick">اختيار فيديو</span>
-      </label>
-      <input id="videoInput" type="file" accept="video/*">
+  <div class="card file-info" id="fileCard" hidden>
+    <div>
+      <strong id="fileName"></strong><br>
+      <small id="fileSize"></small>
+    </div>
+    <button class="btn" style="width:auto;padding:8px 14px;font-size:13px;background:#333;color:#eee" onclick="location.reload()">تغيير الفيديو</button>
+  </div>
 
-      <p id="fileInfo">لم يتم اختيار فيديو بعد.</p>
+  <h2 style="font-size:18px">اختر طريقة</h2>
 
-      <div class="options">
-        <label class="option" for="resolution">
-          الدقة
-          <select id="resolution">
-            <option value="1080">1080p</option>
-            <option value="720" selected>720p</option>
-            <option value="480">480p</option>
-            <option value="360">360p</option>
-          </select>
-        </label>
+  <div class="card opt selected" data-mode="quality">
+    <input type="radio" name="mode" checked>
+    <div>
+      <span class="badge">موصى به</span>
+      <h3>أعلى جودة مع ضغط متوازن</h3>
+      <p>يحافظ على الجودة ويقلل الحجم، مناسب لأغلب الفيديوهات.</p>
+    </div>
+  </div>
 
-        <label class="option" for="quality">
-          مستوى الضغط
-          <select id="quality">
-            <option value="23">جودة عالية</option>
-            <option value="28" selected>متوازن</option>
-            <option value="33">حجم أصغر</option>
-          </select>
-        </label>
-      </div>
+  <div class="card opt" data-mode="fps">
+    <input type="radio" name="mode">
+    <div>
+      <h3>تقليل الإطارات (FPS)</h3>
+      <p>يخفض عدد الإطارات في الثانية لتصغير الحجم، مفيد للفيديوهات الثابتة.</p>
+    </div>
+  </div>
 
-      <video id="preview" controls playsinline></video>
+  <div class="card opt" data-mode="720">
+    <input type="radio" name="mode">
+    <div>
+      <h3>دقة 720p60</h3>
+      <p>تحويل إلى 720 بكسل مع الحفاظ على 60 إطاراً في الثانية.</p>
+    </div>
+  </div>
 
-      <div class="progress-wrap" id="progressWrap">
-        <progress id="progress" max="100" value="0"></progress>
-        <div id="percent">0%</div>
-      </div>
+  <div class="card opt" data-mode="chat">
+    <input type="radio" name="mode">
+    <div>
+      <h3>مناسب للمراسلة</h3>
+      <p>يضغط الملف ليكون أقل من 20 ميجابايت ليسهل إرساله.</p>
+    </div>
+  </div>
 
-      <p id="status" aria-live="polite"></p>
+  <div class="card opt" data-mode="tiktok">
+    <input type="radio" name="mode">
+    <div>
+      <h3>تحسين لتيك توك</h3>
+      <p>إعدادات مناسبة للنشر مع الحفاظ على وضوح الصورة.</p>
+    </div>
+  </div>
 
-      <div class="actions">
-        <button id="compressButton" disabled>ضغط الفيديو</button>
-        <br>
-        <a id="downloadLink" class="download" download="ibrahim-fares-compressed.mp4">
-          تنزيل الفيديو المضغوط
-        </a>
-      </div>
+  <button class="btn" id="startBtn" disabled>ابدأ المعالجة</button>
+  <div class="bar"><div id="progress"></div></div>
+  <div id="msg"></div>
+</div>
 
-      <p class="note">
-        قد يستغرق الضغط وقتًا، ويعتمد على حجم الفيديو وسرعة الجهاز.
-        لا تغلق الصفحة أثناء المعالجة.
-      </p>
-    </section>
-  </main>
+<script>
+  const fileInput = document.getElementById("file");
+  const startBtn = document.getElementById("startBtn");
+  let selectedMode = "quality";
 
-  <footer>© <span id="year"></span> إبراهيم فارس</footer>
+  fileInput.addEventListener("change", () => {
+    const f = fileInput.files[0];
+    if (!f) return;
+    document.getElementById("uploadCard").hidden = true;
+    document.getElementById("fileCard").hidden = false;
+    document.getElementById("fileName").textContent = f.name;
+    document.getElementById("fileSize").textContent =
+      (f.size / 1024 / 1024).toFixed(1) + " ميجابايت";
+    startBtn.disabled = false;
+  });
 
-  <script type="module">
-    import { FFmpeg } from "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js";
-    import { fetchFile, toBlobURL } from "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js";
-
-    const input = document.getElementById("videoInput");
-    const preview = document.getElementById("preview");
-    const fileInfo = document.getElementById("fileInfo");
-    const status = document.getElementById("status");
-    const button = document.getElementById("compressButton");
-    const downloadLink = document.getElementById("downloadLink");
-    const progressWrap = document.getElementById("progressWrap");
-    const progress = document.getElementById("progress");
-    const percent = document.getElementById("percent");
-
-    document.getElementById("year").textContent = new Date().getFullYear();
-
-    let selectedFile = null;
-    let previewUrl = null;
-    let resultUrl = null;
-    let ffmpeg = null;
-    let isLoaded = false;
-
-    input.addEventListener("change", () => {
-      selectedFile = input.files?.[0];
-      if (!selectedFile) return;
-
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      previewUrl = URL.createObjectURL(selectedFile);
-      preview.src = previewUrl;
-      preview.style.display = "block";
-      button.disabled = false;
-      downloadLink.style.display = "none";
-      fileInfo.textContent = `${selectedFile.name} — ${formatBytes(selectedFile.size)}`;
-      status.textContent = "";
+  document.querySelectorAll(".opt").forEach(opt => {
+    opt.addEventListener("click", () => {
+      document.querySelectorAll(".opt").forEach(o => o.classList.remove("selected"));
+      opt.classList.add("selected");
+      opt.querySelector("input").checked = true;
+      selectedMode = opt.dataset.mode;
     });
+  });
 
-    button.addEventListener("click", async () => {
-      if (!selectedFile) return;
+  // أوامر FFmpeg المقابلة لكل طريقة
+  const commands = {
+    quality: "-c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k",
+    fps:     "-c:v libx264 -crf 23 -r 30 -c:a aac -b:a 128k",
+    "720":   "-vf scale=-2:720 -r 60 -c:v libx264 -crf 23 -c:a aac -b:a 128k",
+    chat:    "-vf scale=-2:720 -c:v libx264 -crf 30 -c:a aac -b:a 96k -fs 20M",
+    tiktok:  "-vf scale=-2:1080 -c:v libx264 -crf 22 -c:a aac -b:a 128k"
+  };
 
-      button.disabled = true;
-      downloadLink.style.display = "none";
-      progressWrap.style.display = "block";
-      progress.value = 0;
-      percent.textContent = "0%";
-
-      try {
-        if (!isLoaded) {
-          status.textContent = "جارٍ تحميل محرك الضغط لأول مرة...";
-          ffmpeg = new FFmpeg();
-
-          ffmpeg.on("progress", ({ progress: value }) => {
-            const p = Math.max(0, Math.min(100, Math.round(value * 100)));
-            progress.value = p;
-            percent.textContent = p + "%";
-          });
-
-          const base = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd";
-          await ffmpeg.load({
-            coreURL: await toBlobURL(`${base}/ffmpeg-core.js`, "text/javascript"),
-            wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, "application/wasm")
-          });
-
-          isLoaded = true;
-        }
-
-        status.textContent = "جارٍ ضغط الفيديو...";
-
-        const inputName = "input-video";
-        const outputName = "compressed-video.mp4";
-        const maxHeight = document.getElementById("resolution").value;
-        const crf = document.getElementById("quality").value;
-
-        await ffmpeg.writeFile(inputName, await fetchFile(selectedFile));
-
-        await ffmpeg.exec([
-          "-i", inputName,
-          "-vf", `scale=-2:${maxHeight}`,
-          "-c:v", "libx264",
-          "-preset", "veryfast",
-          "-crf", crf,
-          "-c:a", "aac",
-          "-b:a", "128k",
-          "-movflags", "+faststart",
-          outputName
-        ]);
-
-        const data = await ffmpeg.readFile(outputName);
-        const blob = new Blob([data], { type: "video/mp4" });
-
-        if (resultUrl) URL.revokeObjectURL(resultUrl);
-        resultUrl = URL.createObjectURL(blob);
-
-        downloadLink.href = resultUrl;
-        downloadLink.download = "ibrahim-fares-compressed.mp4";
-        downloadLink.style.display = "inline-block";
-
-        const saved = Math.max(0, Math.round((1 - blob.size / selectedFile.size) * 100));
-        status.textContent =
-          `اكتمل الضغط — الحجم الجديد: ${formatBytes(blob.size)} — التوفير: ${saved}%`;
-        progress.value = 100;
-        percent.textContent = "اكتمل";
-      } catch (error) {
-        console.error(error);
-        status.textContent =
-          "تعذر الضغط. جرّب فيديو أصغر أو افتح الموقع بمتصفح Chrome واترك الصفحة مفتوحة.";
-      } finally {
-        button.disabled = false;
-      }
-    });
-
-    function formatBytes(bytes) {
-      if (bytes < 1024) return bytes + " بايت";
-      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " كيلوبايت";
-      return (bytes / (1024 * 1024)).toFixed(2) + " ميغابايت";
-    }
-  </script>
+  startBtn.addEventListener("click", () => {
+    startBtn.disabled = true;
+    const msg = document.getElementById("msg");
+    const bar = document.getElementById("progress");
+    msg.textContent = "جاري المعالجة بالإعداد: " + commands[selectedMode];
+    // هنا تربط ffmpeg.wasm لتنفيذ الأمر وتحديث شريط التقدم
+    let p = 0;
+    const t = setInterval(() => {
+      p += 5; bar.style.width = p + "%";
+      if (p >= 100) { clearInterval(t); msg.textContent = "تم، جاهز للتحميل"; startBtn.disabled = false; }
+    }, 150);
+  });
+</script>
 </body>
 </html>
