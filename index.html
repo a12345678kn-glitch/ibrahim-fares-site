@@ -1,274 +1,468 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ضاغط الفيديو</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101114">
+  <title>استوديو معالجة الفيديو</title>
+
   <style>
+    :root {
+      --bg: #101114;
+      --panel: #191a1f;
+      --panel2: #202127;
+      --border: #303139;
+      --text: #f5f5f6;
+      --muted: #a5a6ad;
+      --gold: #f4cf4d;
+      --gold2: #ffe783;
+      --green: #76d5a1;
+      --red: #ff7777;
+    }
+
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
-      background: #101113;
-      color: #f4f4f4;
-      font-family: Arial, sans-serif;
-      padding: 18px;
+      background:
+        radial-gradient(ellipse at 50% -10%, #34301d 0, transparent 38%),
+        var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+      min-height: 100vh;
     }
-    .page { max-width: 520px; margin: auto; }
-    header, .card, .box {
-      background: #18191c;
-      border: 1px solid #2b2c30;
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 14px;
-    }
-    header { display: flex; justify-content: space-between; align-items: center; }
-    h1 { font-size: 19px; margin: 0; }
-    h2 { font-size: 16px; margin: 0 0 12px; }
-    p { color: #aaa; line-height: 1.7; font-size: 13px; }
-    .gold { color: #ffd64a; }
-    .file-label, button, .download {
-      display: block;
-      width: 100%;
-      border: 0;
-      border-radius: 12px;
-      padding: 14px;
-      font-size: 15px;
-      font-weight: bold;
-      text-align: center;
-      cursor: pointer;
-      text-decoration: none;
-    }
-    .file-label, button { background: #ffd64a; color: #171717; }
-    button:disabled { opacity: .45; cursor: not-allowed; }
-    input[type=file] { display: none; }
-    .method {
+
+    .wrap { width: min(100% - 28px, 720px); margin: 22px auto 40px; }
+
+    .topbar {
       display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 13px;
-      border: 1px solid #34353a;
-      border-radius: 12px;
-      margin: 9px 0;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(25,26,31,.95);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 15px 17px;
+      margin-bottom: 16px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .logo {
+      width: 38px; height: 38px; display: grid; place-items: center;
+      border-radius: 12px; background: var(--gold); color: #191919;
+      font-size: 20px; font-weight: 900;
+    }
+    .brand h1 { font-size: 17px; margin: 0; }
+    .brand p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .local-tag {
+      border: 1px solid #475243; color: var(--green);
+      border-radius: 999px; padding: 7px 10px; font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .card {
+      background: rgba(25,26,31,.97);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      margin: 13px 0;
+    }
+
+    .step-title { display: flex; align-items: center; gap: 10px; margin-bottom: 13px; }
+    .num {
+      display: grid; place-items: center; width: 28px; height: 28px;
+      background: var(--gold); color: #171717; border-radius: 9px;
+      font-weight: 900;
+    }
+    h2 { font-size: 16px; margin: 0; }
+    .hint { color: var(--muted); font-size: 13px; line-height: 1.75; margin: 0 0 14px; }
+
+    .drop {
+      border: 1px dashed #66666a;
+      background: #141519;
+      border-radius: 16px;
+      min-height: 126px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 20px;
+      cursor: pointer;
+      transition: .2s;
+    }
+    .drop:hover, .drop.drag { border-color: var(--gold); background: #1e1d17; }
+    .plus {
+      width: 38px; height: 38px; display: grid; place-items: center;
+      background: var(--gold); color: #151515; border-radius: 12px;
+      font-size: 24px; margin: 0 auto 8px;
+    }
+    .drop strong { display: block; font-size: 14px; }
+    .drop small { display: block; margin-top: 5px; color: var(--muted); }
+    input[type=file] { display: none; }
+
+    .filebox {
+      display: none; align-items: center; justify-content: space-between;
+      gap: 10px; margin-top: 12px; background: var(--panel2);
+      padding: 12px; border-radius: 12px;
+    }
+    .fileinfo { min-width: 0; }
+    .filename { overflow-wrap: anywhere; font-size: 13px; }
+    .filesize { color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .remove {
+      color: var(--red); background: transparent; border: 1px solid #594044;
+      padding: 8px 10px; border-radius: 9px; cursor: pointer;
+    }
+
+    .options { display: grid; gap: 10px; }
+    .option {
+      display: flex; align-items: flex-start; gap: 11px;
+      padding: 14px; border: 1px solid var(--border);
+      background: #15161a; border-radius: 13px; cursor: pointer;
+    }
+    .option:has(input:checked) { border-color: var(--gold); background: #201e16; }
+    .option input { accent-color: var(--gold); margin-top: 3px; width: 17px; height: 17px; }
+    .option strong { font-size: 14px; }
+    .option small { display: block; color: var(--muted); line-height: 1.6; margin-top: 4px; }
+    .badge { color: var(--gold); font-size: 10px; margin-right: 5px; }
+
+    .checkrow {
+      display: flex; align-items: center; gap: 10px; padding: 13px 14px;
+      border: 1px solid var(--border); background: #15161a; border-radius: 13px;
+      margin-top: 10px;
+    }
+    .checkrow input { accent-color: var(--gold); width: 17px; height: 17px; }
+    .checkrow label { cursor: pointer; font-size: 14px; }
+    .checkrow small { display: block; color: var(--muted); margin-top: 4px; }
+
+    .button {
+      width: 100%; border: 0; border-radius: 13px; padding: 15px;
+      margin-top: 15px; color: #171717; font-weight: 900; font-size: 15px;
+      background: linear-gradient(110deg, var(--gold), var(--gold2));
       cursor: pointer;
     }
-    .method:has(input:checked) { border-color: #ffd64a; }
-    .method input { accent-color: #ffd64a; margin-top: 3px; }
-    .method small { display: block; color: #aaa; margin-top: 5px; line-height: 1.5; }
-    video { width: 100%; max-height: 230px; border-radius: 12px; background: #000; }
-    .hidden { display: none; }
-    progress { width: 100%; height: 12px; accent-color: #ffd64a; }
-    .download { background: #26272b; color: #ffd64a; margin-top: 10px; }
-    .status { font-size: 13px; color: #ffd64a; overflow-wrap: anywhere; }
+    .button:disabled { opacity: .45; cursor: not-allowed; }
+
+    .statusbox { display: none; }
+    .status { font-size: 13px; line-height: 1.6; margin: 0 0 10px; }
+    progress { width: 100%; height: 12px; accent-color: var(--gold); }
+    .download {
+      display: none; text-align: center; padding: 13px; margin-top: 13px;
+      border-radius: 11px; background: var(--gold); color: #171717;
+      text-decoration: none; font-weight: 900;
+    }
+    .note {
+      color: var(--muted); font-size: 12px; line-height: 1.8;
+      text-align: center; padding: 6px 12px;
+    }
+    .error { color: var(--red); }
+    .success { color: var(--green); }
+
+    @media (max-width: 420px) {
+      .wrap { width: min(100% - 20px, 720px); margin-top: 10px; }
+      .card { padding: 14px; }
+      .local-tag { font-size: 10px; padding: 6px 8px; }
+    }
   </style>
 </head>
+
 <body>
-  <main class="page">
-    <header>
-      <h1>🎬 ضاغط الفيديو</h1>
-      <span class="gold">معالجة داخل المتصفح</span>
+  <main class="wrap">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">▶</div>
+        <div>
+          <h1>استوديو معالجة الفيديو</h1>
+          <p>معالجة محلية داخل المتصفح</p>
+        </div>
+      </div>
+      <span class="local-tag">● بدون رفع الملفات</span>
     </header>
 
     <section class="card">
-      <h2>1. اختر الفيديو</h2>
-      <label class="file-label" for="file">اختيار فيديو من الجهاز</label>
-      <input id="file" type="file" accept="video/*">
-      <p id="fileInfo">اختر ملف فيديو للبدء.</p>
-      <video id="preview" controls playsinline class="hidden"></video>
+      <div class="step-title"><span class="num">1</span><h2>اختر الفيديو</h2></div>
+      <p class="hint">اختر ملف فيديو من جهازك. الفيديو يبقى كاملاً، ولا يتم قصّ مدته.</p>
+
+      <label class="drop" id="dropArea" for="videoFile">
+        <span>
+          <span class="plus">+</span>
+          <strong>اضغط لاختيار الفيديو</strong>
+          <small>أو اسحب الملف إلى هنا</small>
+        </span>
+      </label>
+      <input id="videoFile" type="file" accept="video/*">
+
+      <div class="filebox" id="fileBox">
+        <div class="fileinfo">
+          <div class="filename" id="fileName"></div>
+          <div class="filesize" id="fileSize"></div>
+        </div>
+        <button class="remove" id="removeFile" type="button">إزالة</button>
+      </div>
     </section>
 
     <section class="card">
-      <h2>2. اختر طريقة الضغط</h2>
+      <div class="step-title"><span class="num">2</span><h2>اختر المعالجة</h2></div>
+      <p class="hint">اختر معالجة واحدة للفيديو. خيار تيك توك يحافظ على الصورة كاملة ويضيف حواف عند الحاجة.</p>
 
-      <label class="method">
-        <input type="radio" name="quality" value="high">
-        <span>جودة عالية
-          <small>دقة قريبة من الأصل وحجم أكبر.</small>
-        </span>
-      </label>
+      <div class="options">
+        <label class="option">
+          <input type="radio" name="mode" value="720" checked>
+          <span>
+            <strong>تحويل إلى 720p <span class="badge">موصى به</span></strong>
+            <small>يخفض الدقة إذا كانت أعلى من 720p، ويحافظ على نسبة أبعاد الفيديو ومدته.</small>
+          </span>
+        </label>
 
-      <label class="method">
-        <input type="radio" name="quality" value="medium" checked>
-        <span>متوازن — موصى به
-          <small>تقليل جيد للحجم مع جودة مناسبة.</small>
-        </span>
-      </label>
+        <label class="option">
+          <input type="radio" name="mode" value="keep">
+          <span>
+            <strong>تحسين الحجم مع إبقاء الدقة</strong>
+            <small>يحافظ على أبعاد الفيديو الأصلية ويعيد ترميزه بحجم مناسب. لا يضمن أن الناتج دائماً أصغر.</small>
+          </span>
+        </label>
 
-      <label class="method">
-        <input type="radio" name="quality" value="small">
-        <span>حجم صغير
-          <small>دقة ومعدل إطارات أقل لتقليل الحجم أكثر.</small>
-        </span>
-      </label>
+        <label class="option">
+          <input type="radio" name="mode" value="tiktok">
+          <span>
+            <strong>تهيئة عمودية لتيك توك</strong>
+            <small>إطار 9:16 بدقة 1080×1920. الفيديو لا يُقص؛ تضاف حواف إذا لم تكن أبعاده عمودية.</small>
+          </span>
+        </label>
+      </div>
 
-      <button id="start" disabled>ابدأ الضغط</button>
+      <div class="checkrow">
+        <input id="muteAudio" type="checkbox">
+        <label for="muteAudio">
+          كتم الصوت
+          <small>اتركه غير محدد للاحتفاظ بالصوت الأصلي.</small>
+        </label>
+      </div>
+
+      <button class="button" id="processButton" type="button" disabled>ابدأ المعالجة</button>
     </section>
 
-    <section id="result" class="box hidden">
-      <p id="status" class="status"></p>
+    <section class="card statusbox" id="statusBox">
+      <p class="status" id="statusText">جارٍ التحضير…</p>
       <progress id="progress" max="100" value="0"></progress>
-      <a id="download" class="download hidden">تنزيل الفيديو المضغوط</a>
+      <a class="download" id="downloadLink">تنزيل الفيديو المعالج</a>
     </section>
 
-    <p>الملف يُعالَج على جهازك عبر المتصفح ولا يُرسل إلى خادم. يعتمد توفر الضغط على دعم المتصفح لصيغة WebM.</p>
+    <p class="note">
+      تتم المعالجة على جهازك. لا تغلق الصفحة أثناء العمل. الملفات الكبيرة قد تستغرق وقتاً أو تتطلب ذاكرة أكبر.
+    </p>
   </main>
 
-  <script>
-    const fileInput = document.getElementById("file");
-    const preview = document.getElementById("preview");
-    const fileInfo = document.getElementById("fileInfo");
-    const startButton = document.getElementById("start");
-    const result = document.getElementById("result");
-    const statusText = document.getElementById("status");
+  <script type="module">
+    const fileInput = document.getElementById("videoFile");
+    const dropArea = document.getElementById("dropArea");
+    const fileBox = document.getElementById("fileBox");
+    const fileName = document.getElementById("fileName");
+    const fileSize = document.getElementById("fileSize");
+    const removeFile = document.getElementById("removeFile");
+    const processButton = document.getElementById("processButton");
+    const statusBox = document.getElementById("statusBox");
+    const statusText = document.getElementById("statusText");
     const progress = document.getElementById("progress");
-    const download = document.getElementById("download");
+    const downloadLink = document.getElementById("downloadLink");
 
-    let selectedFile = null;
-    let sourceUrl = null;
+    let videoFile = null;
+    let ffmpeg = null;
+    let loadingPromise = null;
     let outputUrl = null;
-    let running = false;
+    let busy = false;
 
-    function formatSize(bytes) {
+    function humanSize(bytes) {
       if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
       return (bytes / (1024 * 1024)).toFixed(1) + " MB";
     }
 
-    fileInput.addEventListener("change", () => {
-      selectedFile = fileInput.files[0] || null;
-      startButton.disabled = !selectedFile;
-      result.classList.add("hidden");
-      download.classList.add("hidden");
+    function setStatus(message, type = "") {
+      statusText.textContent = message;
+      statusText.className = "status " + type;
+    }
 
-      if (!selectedFile) return;
-
-      if (sourceUrl) URL.revokeObjectURL(sourceUrl);
-      sourceUrl = URL.createObjectURL(selectedFile);
-      preview.src = sourceUrl;
-      preview.classList.remove("hidden");
-      fileInfo.textContent = selectedFile.name + " — " + formatSize(selectedFile.size);
-    });
-
-    startButton.addEventListener("click", async () => {
-      if (!selectedFile || running) return;
-
-      if (!HTMLCanvasElement.prototype.captureStream ||
-          !HTMLMediaElement.prototype.captureStream) {
-        alert("متصفحك لا يدعم هذه الطريقة. جرّب Chrome أو Edge حديثاً.");
+    function pickFile(file) {
+      if (!file) return;
+      if (!file.type.startsWith("video/")) {
+        alert("الرجاء اختيار ملف فيديو.");
         return;
       }
 
-      const quality = document.querySelector('input[name="quality"]:checked').value;
-      const settings = {
-        high:   { maxWidth: 1920, fps: 30, bitrate: 2500000 },
-        medium: { maxWidth: 1280, fps: 24, bitrate: 1200000 },
-        small:  { maxWidth: 854,  fps: 20, bitrate: 650000 }
-      }[quality];
+      videoFile = file;
+      fileName.textContent = file.name;
+      fileSize.textContent = humanSize(file.size);
+      fileBox.style.display = "flex";
+      processButton.disabled = false;
+      statusBox.style.display = "none";
+      downloadLink.style.display = "none";
 
-      running = true;
-      startButton.disabled = true;
-      result.classList.remove("hidden");
-      download.classList.add("hidden");
-      progress.value = 0;
-      statusText.textContent = "جارٍ تجهيز الفيديو…";
+      if (outputUrl) {
+        URL.revokeObjectURL(outputUrl);
+        outputUrl = null;
+      }
+    }
 
-      let recorder;
-      let canvasStream;
-      let inputStream;
-      let animationId;
+    fileInput.addEventListener("change", () => pickFile(fileInput.files[0]));
+
+    removeFile.addEventListener("click", () => {
+      videoFile = null;
+      fileInput.value = "";
+      fileBox.style.display = "none";
+      processButton.disabled = true;
+      statusBox.style.display = "none";
+    });
+
+    for (const eventName of ["dragenter", "dragover"]) {
+      dropArea.addEventListener(eventName, event => {
+        event.preventDefault();
+        dropArea.classList.add("drag");
+      });
+    }
+
+    for (const eventName of ["dragleave", "drop"]) {
+      dropArea.addEventListener(eventName, event => {
+        event.preventDefault();
+        dropArea.classList.remove("drag");
+      });
+    }
+
+    dropArea.addEventListener("drop", event => {
+      const file = event.dataTransfer.files[0];
+      pickFile(file);
+    });
+
+    async function loadFFmpeg() {
+      if (ffmpeg) return ffmpeg;
+      if (loadingPromise) return loadingPromise;
+
+      loadingPromise = (async () => {
+        setStatus("جارٍ تحميل محرك المعالجة لأول مرة…");
+        const { FFmpeg } = await import(
+          "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js"
+        );
+
+        const engine = new FFmpeg();
+
+        engine.on("progress", event => {
+          if (typeof event.progress === "number") {
+            const value = Math.max(0, Math.min(99, Math.round(event.progress * 100)));
+            progress.value = value;
+            setStatus("جارٍ معالجة الفيديو… " + value + "%");
+          }
+        });
+
+        const base = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
+        await engine.load({
+          coreURL: base + "/ffmpeg-core.js",
+          wasmURL: base + "/ffmpeg-core.wasm"
+        });
+
+        ffmpeg = engine;
+        return engine;
+      })();
 
       try {
-        if (preview.readyState < 1) {
-          await new Promise((resolve, reject) => {
-            preview.onloadedmetadata = resolve;
-            preview.onerror = reject;
-          });
+        return await loadingPromise;
+      } catch (error) {
+        loadingPromise = null;
+        throw error;
+      }
+    }
+
+    function safeOutputName(name) {
+      const clean = name.replace(/\.[^/.]+$/, "").replace(/[^\w\-ء-ي]+/g, "_");
+      return (clean || "video") + "_processed.mp4";
+    }
+
+    processButton.addEventListener("click", async () => {
+      if (!videoFile || busy) return;
+
+      busy = true;
+      processButton.disabled = true;
+      statusBox.style.display = "block";
+      progress.value = 0;
+      downloadLink.style.display = "none";
+      setStatus("جارٍ تجهيز المعالجة…");
+
+      const inputName = "input_video";
+      const outputName = "processed_video.mp4";
+
+      try {
+        const engine = await loadFFmpeg();
+
+        setStatus("جارٍ قراءة الفيديو…");
+        await engine.writeFile(inputName, new Uint8Array(await videoFile.arrayBuffer()));
+
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        const mute = document.getElementById("muteAudio").checked;
+
+        let videoFilter;
+
+        if (mode === "720") {
+          // يضع الحد الأعلى للارتفاع عند 720 مع الحفاظ على النسبة.
+          videoFilter = "scale=-2:min(720\\,ih)";
+        } else if (mode === "tiktok") {
+          // يلائم الفيديو داخل إطار عمودي دون قصّ الصورة.
+          videoFilter =
+            "scale=1080:1920:force_original_aspect_ratio=decrease," +
+            "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1";
+        } else {
+          // إعادة ترميز مع الحفاظ على الأبعاد الأصلية.
+          videoFilter = "null";
         }
 
-        const scale = Math.min(1, settings.maxWidth / preview.videoWidth);
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.max(2, Math.round(preview.videoWidth * scale / 2) * 2);
-        canvas.height = Math.max(2, Math.round(preview.videoHeight * scale / 2) * 2);
+        const args = [
+          "-i", inputName,
+          "-map", "0:v:0",
+          "-vf", videoFilter,
+          "-c:v", "libx264",
+          "-preset", "ultrafast",
+          "-crf", "26"
+        ];
 
-        const context = canvas.getContext("2d");
-        canvasStream = canvas.captureStream(settings.fps);
-        inputStream = preview.captureStream();
-
-        // إضافة صوت الفيديو الأصلي، إذا كان متوفراً.
-        for (const track of inputStream.getAudioTracks()) {
-          canvasStream.addTrack(track);
+        if (mute) {
+          args.push("-an");
+        } else {
+          args.push("-map", "0:a?", "-c:a", "aac", "-b:a", "128k");
         }
 
-        const mimeType = [
-          "video/webm;codecs=vp9,opus",
-          "video/webm;codecs=vp8,opus",
-          "video/webm"
-        ].find(type => MediaRecorder.isTypeSupported(type));
+        args.push(
+          "-movflags", "+faststart",
+          "-sn",
+          "-y",
+          outputName
+        );
 
-        if (!mimeType) {
-          throw new Error("المتصفح لا يدعم تسجيل WebM.");
-        }
+        setStatus("جارٍ معالجة الفيديو… اترك الصفحة مفتوحة.");
+        await engine.exec(args);
 
-        const chunks = [];
-        recorder = new MediaRecorder(canvasStream, {
-          mimeType,
-          videoBitsPerSecond: settings.bitrate
-        });
+        const data = await engine.readFile(outputName);
+        const blob = new Blob([data], { type: "video/mp4" });
 
-        recorder.ondataavailable = event => {
-          if (event.data && event.data.size) chunks.push(event.data);
-        };
-
-        const finished = new Promise((resolve, reject) => {
-          recorder.onstop = resolve;
-          recorder.onerror = () => reject(new Error("تعذّر تسجيل الفيديو."));
-        });
-
-        function drawFrame() {
-          if (preview.ended || preview.paused) return;
-          context.drawImage(preview, 0, 0, canvas.width, canvas.height);
-          const percent = preview.duration
-            ? Math.min(99, (preview.currentTime / preview.duration) * 100)
-            : 0;
-          progress.value = percent;
-          statusText.textContent = "جارٍ الضغط… " + Math.floor(percent) + "%";
-          animationId = requestAnimationFrame(drawFrame);
-        }
-
-        preview.currentTime = 0;
-        await preview.play();
-        recorder.start(1000);
-        drawFrame();
-
-        await new Promise(resolve => {
-          preview.onended = resolve;
-        });
-
-        cancelAnimationFrame(animationId);
-        if (recorder.state !== "inactive") recorder.stop();
-        await finished;
-
-        const blob = new Blob(chunks, { type: mimeType });
         if (outputUrl) URL.revokeObjectURL(outputUrl);
         outputUrl = URL.createObjectURL(blob);
 
-        download.href = outputUrl;
-        download.download = selectedFile.name.replace(/\.[^.]+$/, "") + "-compressed.webm";
-        download.textContent = "تنزيل الناتج — " + formatSize(blob.size);
-        download.classList.remove("hidden");
+        downloadLink.href = outputUrl;
+        downloadLink.download = safeOutputName(videoFile.name);
+        downloadLink.textContent = "تنزيل الفيديو — " + humanSize(blob.size);
+        downloadLink.style.display = "block";
 
         progress.value = 100;
-        statusText.textContent =
-          "اكتمل الضغط. حجم الناتج: " + formatSize(blob.size) +
-          " (الأصلي: " + formatSize(selectedFile.size) + ")";
+        setStatus(
+          "اكتملت المعالجة. المدة محفوظة. حجم الناتج: " + humanSize(blob.size),
+          "success"
+        );
+
+        await engine.deleteFile(inputName);
+        await engine.deleteFile(outputName);
       } catch (error) {
-        statusText.textContent = "تعذّر الضغط: " + error.message;
+        console.error(error);
+        setStatus(
+          "ما اكتملت المعالجة. جرّب متصفحاً حديثاً أو فيديو أصغر، وتأكد من اتصال الإنترنت.",
+          "error"
+        );
       } finally {
-        if (animationId) cancelAnimationFrame(animationId);
-        if (recorder && recorder.state !== "inactive") recorder.stop();
-        if (inputStream) inputStream.getTracks().forEach(track => track.stop());
-        if (canvasStream) canvasStream.getTracks().forEach(track => track.stop());
-        preview.pause();
-        running = false;
-        startButton.disabled = !selectedFile;
+        busy = false;
+        processButton.disabled = !videoFile;
       }
     });
   </script>
