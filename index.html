@@ -5,140 +5,213 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ضغط الفيديو</title>
   <style>
+    * { box-sizing: border-box; }
     body { margin: 0; font-family: Tahoma, Arial, sans-serif; background: #0b0b0b; color: #eee; }
     .wrap { max-width: 480px; margin: 0 auto; padding: 20px; }
-    .steps { display: flex; justify-content: space-between; margin-bottom: 24px; font-size: 13px; color: #666; }
+    h1 { font-size: 22px; text-align: center; color: #f5b400; }
+    .steps { display: flex; justify-content: space-between; margin: 20px 0; font-size: 13px; color: #666; }
     .steps .active { color: #f5b400; font-weight: bold; }
     .card { background: #161616; border: 1px solid #2a2a2a; border-radius: 14px; padding: 16px; margin-bottom: 12px; }
-    .file-info { display: flex; justify-content: space-between; align-items: center; }
-    .file-info small { color: #888; }
-    .opt { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
+    .drop { text-align: center; padding: 30px 10px; border: 2px dashed #444; border-radius: 14px; cursor: pointer; color: #aaa; }
+    .drop:hover { border-color: #f5b400; }
+    input[type=file] { display: none; }
+    .opt { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; border: 1px solid #2a2a2a; border-radius: 14px; padding: 14px; margin-bottom: 10px; background: #161616; }
+    .opt.selected { border-color: #f5b400; }
     .opt input { margin-top: 4px; accent-color: #f5b400; }
     .opt h3 { margin: 0 0 4px; font-size: 15px; }
     .opt p { margin: 0; font-size: 12px; color: #999; line-height: 1.6; }
-    .opt.selected { border-color: #f5b400; }
     .badge { display: inline-block; background: #f5b400; color: #000; font-size: 11px; padding: 2px 8px; border-radius: 6px; margin-bottom: 6px; }
-    .btn { width: 100%; padding: 14px; background: #f5b400; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    .btn { width: 100%; padding: 14px; background: #f5b400; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 8px; }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn.small { width: auto; padding: 8px 14px; font-size: 13px; background: #333; color: #eee; margin: 0; }
     .bar { height: 8px; background: #222; border-radius: 6px; overflow: hidden; margin-top: 12px; }
-    .bar div { height: 100%; width: 0; background: #f5b400; transition: width 0.3s; }
-    #msg { font-size: 13px; color: #aaa; margin-top: 8px; }
-    input[type=file] { color: #aaa; }
+    .bar div { height: 100%; width: 0; background: #f5b400; transition: width 0.2s; }
+    #msg { font-size: 13px; color: #aaa; margin-top: 10px; text-align: center; min-height: 20px; }
+    .result { text-align: center; }
+    .result a { color: #f5b400; font-weight: bold; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
 <div class="wrap">
+  <h1>ضغط الفيديو</h1>
+
   <div class="steps">
-    <span>1 رفع</span>
-    <span class="active">2 الطريقة</span>
-    <span>3 التحميل</span>
+    <span id="s1">1 رفع</span>
+    <span id="s2">2 الطريقة</span>
+    <span id="s3">3 التحميل</span>
   </div>
 
-  <div class="card" id="uploadCard">
+  <!-- الخطوة 1: الرفع -->
+  <div id="step1">
+    <label class="drop" for="file">اضغط لاختيار فيديو (MP4 أو MOV)</label>
     <input type="file" id="file" accept="video/*">
   </div>
 
-  <div class="card file-info" id="fileCard" hidden>
-    <div>
-      <strong id="fileName"></strong><br>
-      <small id="fileSize"></small>
+  <!-- الخطوة 2: اختيار الطريقة -->
+  <div id="step2" class="hidden">
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <strong id="fileName"></strong><br>
+        <small id="fileSize" style="color:#888"></small>
+      </div>
+      <button class="btn small" id="changeBtn">تغيير الفيديو</button>
     </div>
-    <button class="btn" style="width:auto;padding:8px 14px;font-size:13px;background:#333;color:#eee" onclick="location.reload()">تغيير الفيديو</button>
+
+    <h2 style="font-size:18px">اختر طريقة</h2>
+
+    <label class="opt selected" data-mode="quality">
+      <input type="radio" name="mode" value="quality" checked>
+      <div>
+        <span class="badge">موصى به</span>
+        <h3>أعلى جودة مع ضغط متوازن</h3>
+        <p>يحافظ على الجودة ويقلل الحجم، مناسب لأغلب الفيديوهات.</p>
+      </div>
+    </label>
+
+    <label class="opt" data-mode="fps">
+      <input type="radio" name="mode" value="fps">
+      <div>
+        <h3>تقليل الإطارات (FPS)</h3>
+        <p>يخفض الإطارات إلى 30 في الثانية لتصغير الحجم.</p>
+      </div>
+    </label>
+
+    <label class="opt" data-mode="720">
+      <input type="radio" name="mode" value="720">
+      <div>
+        <h3>دقة 720p60</h3>
+        <p>تحويل إلى 720 بكسل مع الحفاظ على 60 إطاراً في الثانية.</p>
+      </div>
+    </label>
+
+    <label class="opt" data-mode="chat">
+      <input type="radio" name="mode" value="chat">
+      <div>
+        <h3>مناسب للمراسلة</h3>
+        <p>يحاول إبقاء الملف أقل من 20 ميجابايت ليسهل إرساله.</p>
+      </div>
+    </label>
+
+    <label class="opt" data-mode="tiktok">
+      <input type="radio" name="mode" value="tiktok">
+      <div>
+        <h3>تحسين لتيك توك</h3>
+        <p>دقة 1080 بجودة مناسبة للنشر على المنصات.</p>
+      </div>
+    </label>
+
+    <button class="btn" id="startBtn">ابدأ المعالجة</button>
   </div>
 
-  <h2 style="font-size:18px">اختر طريقة</h2>
-
-  <div class="card opt selected" data-mode="quality">
-    <input type="radio" name="mode" checked>
-    <div>
-      <span class="badge">موصى به</span>
-      <h3>أعلى جودة مع ضغط متوازن</h3>
-      <p>يحافظ على الجودة ويقلل الحجم، مناسب لأغلب الفيديوهات.</p>
-    </div>
+  <!-- الخطوة 3: التحميل -->
+  <div id="step3" class="hidden">
+    <div class="bar"><div id="progress"></div></div>
+    <div id="msg">جاري تحميل المحرك...</div>
+    <div class="result" id="result"></div>
   </div>
-
-  <div class="card opt" data-mode="fps">
-    <input type="radio" name="mode">
-    <div>
-      <h3>تقليل الإطارات (FPS)</h3>
-      <p>يخفض عدد الإطارات في الثانية لتصغير الحجم، مفيد للفيديوهات الثابتة.</p>
-    </div>
-  </div>
-
-  <div class="card opt" data-mode="720">
-    <input type="radio" name="mode">
-    <div>
-      <h3>دقة 720p60</h3>
-      <p>تحويل إلى 720 بكسل مع الحفاظ على 60 إطاراً في الثانية.</p>
-    </div>
-  </div>
-
-  <div class="card opt" data-mode="chat">
-    <input type="radio" name="mode">
-    <div>
-      <h3>مناسب للمراسلة</h3>
-      <p>يضغط الملف ليكون أقل من 20 ميجابايت ليسهل إرساله.</p>
-    </div>
-  </div>
-
-  <div class="card opt" data-mode="tiktok">
-    <input type="radio" name="mode">
-    <div>
-      <h3>تحسين لتيك توك</h3>
-      <p>إعدادات مناسبة للنشر مع الحفاظ على وضوح الصورة.</p>
-    </div>
-  </div>
-
-  <button class="btn" id="startBtn" disabled>ابدأ المعالجة</button>
-  <div class="bar"><div id="progress"></div></div>
-  <div id="msg"></div>
 </div>
 
-<script>
-  const fileInput = document.getElementById("file");
-  const startBtn = document.getElementById("startBtn");
-  let selectedMode = "quality";
+<script type="module">
+  import { FFmpeg } from 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js';
+  import { fetchFile, toBlobURL } from 'https://unpkg.com/@ffmpeg/util@0.12.1/dist/esm/index.js';
 
-  fileInput.addEventListener("change", () => {
-    const f = fileInput.files[0];
+  const $ = id => document.getElementById(id);
+  let selectedFile = null;
+  let ffmpeg = null;
+  let ffmpegReady = false;
+
+  // إعدادات FFmpeg لكل طريقة
+  const presets = {
+    quality: ['-c:v', 'libx264', '-crf', '23', '-preset', 'veryfast', '-c:a', 'aac', '-b:a', '128k'],
+    fps:     ['-r', '30', '-c:v', 'libx264', '-crf', '23', '-preset', 'veryfast', '-c:a', 'aac', '-b:a', '128k'],
+    '720':   ['-vf', 'scale=-2:720', '-r', '60', '-c:v', 'libx264', '-crf', '23', '-preset', 'veryfast', '-c:a', 'aac', '-b:a', '128k'],
+    chat:    ['-vf', 'scale=-2:720', '-c:v', 'libx264', '-crf', '30', '-preset', 'veryfast', '-c:a', 'aac', '-b:a', '96k', '-fs', '20M'],
+    tiktok:  ['-vf', 'scale=-2:1080', '-c:v', 'libx264', '-crf', '22', '-preset', 'veryfast', '-c:a', 'aac', '-b:a', '128k']
+  };
+
+  // تحميل المحرك مرة واحدة فقط
+  async function loadFFmpeg() {
+    if (ffmpegReady) return;
+    ffmpeg = new FFmpeg();
+    const base = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
+    await ffmpeg.load({
+      coreURL: await toBlobURL(`${base}/ffmpeg-core.js`, 'text/javascript'),
+      wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, 'application/wasm'),
+    });
+    ffmpeg.on('progress', ({ progress }) => {
+      const p = Math.min(100, Math.round(progress * 100));
+      $('progress').style.width = p + '%';
+    });
+    ffmpegReady = true;
+  }
+
+  function showStep(n) {
+    ['step1', 'step2', 'step3'].forEach((s, i) => $(s).classList.toggle('hidden', i !== n - 1));
+    [1, 2, 3].forEach(i => $('s' + i).classList.toggle('active', i === n));
+  }
+
+  function formatSize(bytes) {
+    return bytes > 1024 * 1024
+      ? (bytes / 1024 / 1024).toFixed(1) + ' ميجابايت'
+      : (bytes / 1024).toFixed(0) + ' كيلوبايت';
+  }
+
+  // الخطوة 1
+  $('file').addEventListener('change', () => {
+    const f = $('file').files[0];
     if (!f) return;
-    document.getElementById("uploadCard").hidden = true;
-    document.getElementById("fileCard").hidden = false;
-    document.getElementById("fileName").textContent = f.name;
-    document.getElementById("fileSize").textContent =
-      (f.size / 1024 / 1024).toFixed(1) + " ميجابايت";
-    startBtn.disabled = false;
+    selectedFile = f;
+    $('fileName').textContent = f.name;
+    $('fileSize').textContent = formatSize(f.size);
+    showStep(2);
   });
 
-  document.querySelectorAll(".opt").forEach(opt => {
-    opt.addEventListener("click", () => {
-      document.querySelectorAll(".opt").forEach(o => o.classList.remove("selected"));
-      opt.classList.add("selected");
-      opt.querySelector("input").checked = true;
-      selectedMode = opt.dataset.mode;
+  $('changeBtn').addEventListener('click', () => {
+    $('file').value = '';
+    selectedFile = null;
+    showStep(1);
+  });
+
+  // اختيار الطريقة
+  document.querySelectorAll('.opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.opt').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      opt.querySelector('input').checked = true;
     });
   });
 
-  // أوامر FFmpeg المقابلة لكل طريقة
-  const commands = {
-    quality: "-c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k",
-    fps:     "-c:v libx264 -crf 23 -r 30 -c:a aac -b:a 128k",
-    "720":   "-vf scale=-2:720 -r 60 -c:v libx264 -crf 23 -c:a aac -b:a 128k",
-    chat:    "-vf scale=-2:720 -c:v libx264 -crf 30 -c:a aac -b:a 96k -fs 20M",
-    tiktok:  "-vf scale=-2:1080 -c:v libx264 -crf 22 -c:a aac -b:a 128k"
-  };
+  // الخطوة 2 ← 3: المعالجة
+  $('startBtn').addEventListener('click', async () => {
+    if (!selectedFile) return;
+    const mode = document.querySelector('input[name="mode"]:checked').value;
+    showStep(3);
+    $('result').innerHTML = '';
+    $('progress').style.width = '0%';
+    $('msg').textContent = 'جاري تحميل المحرك (أول مرة فقط)...';
 
-  startBtn.addEventListener("click", () => {
-    startBtn.disabled = true;
-    const msg = document.getElementById("msg");
-    const bar = document.getElementById("progress");
-    msg.textContent = "جاري المعالجة بالإعداد: " + commands[selectedMode];
-    // هنا تربط ffmpeg.wasm لتنفيذ الأمر وتحديث شريط التقدم
-    let p = 0;
-    const t = setInterval(() => {
-      p += 5; bar.style.width = p + "%";
-      if (p >= 100) { clearInterval(t); msg.textContent = "تم، جاهز للتحميل"; startBtn.disabled = false; }
-    }, 150);
+    try {
+      await loadFFmpeg();
+      $('msg').textContent = 'جاري المعالجة، لا تغلق الصفحة...';
+
+      await ffmpeg.writeFile('input.mp4', await fetchFile(selectedFile));
+      await ffmpeg.exec(['-i', 'input.mp4', ...presets[mode], '-movflags', '+faststart', 'output.mp4']);
+
+      const data = await ffmpeg.readFile('output.mp4');
+      const blob = new Blob([data.buffer], { type: 'video/mp4' });
+      const url = URL.createObjectURL(blob);
+
+      $('progress').style.width = '100%';
+      $('msg').textContent = `تم! الحجم الجديد: ${formatSize(blob.size)} (الأصلي: ${formatSize(selectedFile.size)})`;
+      $('result').innerHTML = `<a href="${url}" download="compressed-${selectedFile.name.replace(/\.[^.]+$/, '')}.mp4">تحميل الفيديو المضغوط</a>`;
+
+      await ffmpeg.deleteFile('input.mp4');
+      await ffmpeg.deleteFile('output.mp4');
+    } catch (err) {
+      console.error(err);
+      $('msg').textContent = 'حدث خطأ أثناء المعالجة، جرّب فيديو أصغر أو متصفحاً آخر.';
+    }
   });
 </script>
 </body>
